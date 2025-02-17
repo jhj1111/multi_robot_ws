@@ -14,6 +14,7 @@ setup(
         (os.path.join('share', package_name, "launch"), glob.glob('launch/*launch.[pxy][yma]*')),
         (os.path.join('share', package_name, "rviz"), glob.glob('rviz/*.rviz')),
         (os.path.join('share', package_name, "map"), glob.glob('map/*')),
+        (os.path.join('share', package_name, "param"), glob.glob('param/*')),
         #(os.path.join('share', package_name, "waypoints"), glob('waypoints/*.yaml')),
     ],
     install_requires=['setuptools'],
