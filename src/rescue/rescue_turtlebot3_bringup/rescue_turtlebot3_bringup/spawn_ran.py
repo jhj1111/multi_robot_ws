@@ -2,6 +2,7 @@ import os
 import rclpy
 import random
 from gazebo_msgs.srv import SpawnEntity
+from ament_index_python.packages import get_package_share_directory
 
 def main():
     # Start node
@@ -21,9 +22,11 @@ def main():
     if not client.service_is_ready():
         client.wait_for_service()
         node.get_logger().info("...connected!")
-
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    sdf_file_path = os.path.join(script_dir, "models/model.sdf") 
+    
+    # script_dir = os.path.dirname(os.path.realpath(__file__))
+    # sdf_file_path = os.path.join(script_dir, "models/model.sdf") 
+    script_dir = os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'models')
+    sdf_file_path = os.path.join(script_dir, "model.sdf") 
 
     # Set data for request
     request = SpawnEntity.Request()

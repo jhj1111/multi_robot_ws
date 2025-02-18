@@ -9,7 +9,8 @@ import sys
 import select
 import termios
 import tty
-from coordinate import coordinate
+#from coordinate import coordinate
+from rescue_control.coordinate import coordinate
 
 class WaypointFollower(Node):
     def __init__(self):

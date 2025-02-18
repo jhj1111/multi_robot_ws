@@ -15,7 +15,7 @@
   <depend>rclpy</depend>
   <depend>xacro</depend>
   <depend>rviz2</depend>
-
+  <depend>gazebo_msgs</depend>
   <export>
     <build_type>ament_python</build_type>
   </export>

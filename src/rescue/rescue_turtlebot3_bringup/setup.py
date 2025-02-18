@@ -15,6 +15,7 @@ setup(
         (os.path.join('share', package_name, "rviz"), glob.glob('rviz/*.rviz')),
         (os.path.join('share', package_name, "map"), glob.glob('map/*')),
         (os.path.join('share', package_name, "worlds"), glob.glob('worlds/*')),
+        (os.path.join('share', package_name, "models"), glob.glob('models/*')),
         (os.path.join('share', package_name, "param"), glob.glob('param/*')),
         #(os.path.join('share', package_name, "waypoints"), glob('waypoints/*.yaml')),
     ],
@@ -27,6 +28,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'spawn_ran = rescue_turtlebot3_bringup.spawn_ran:main',
         ],
     },
 )
