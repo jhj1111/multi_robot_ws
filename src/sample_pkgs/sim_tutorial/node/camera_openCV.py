@@ -54,9 +54,10 @@ class RedObjectTrackingNode(Node):
                 move_cmd = self.compute_movement(x_center, distance)
                 self.publisher_.publish(move_cmd)
                 self.is_moving = True
-                self.create_timer(0.1, self.stop_after_movement)  # 0.1초 후 정지
+                self.create_timer(0.1, self.stop_after_movement)  # 0.1초 정지
         else:
-            self.stop_drone()
+            # self.stop_drone()
+            pass
         
         cv2.imshow("Red Object Tracking", frame)
         cv2.waitKey(1)
@@ -102,16 +103,15 @@ class RedObjectTrackingNode(Node):
         move_cmd.angular.z = 0.0
         self.publisher_.publish(move_cmd)
         self.is_moving = False
-        self.get_logger().info("10cm 이동 후 정지, 다시 객체 탐색")
+        self.get_logger().info("10cm 이동 후 다시 객체 탐색")
     
-    def stop_drone(self):
-        """ 객체를 찾지 못했을 때 정지 """
-        move_cmd = Twist()
-        move_cmd.linear.x = 0.0
-        move_cmd.angular.z = 0.0
-        self.publisher_.publish(move_cmd)
-        self.get_logger().info("빨간색을 찾지 못해 정지")
-
+    # def stop_robot(self):
+    #     """ 객체를 찾지 못했을 때 정지 """
+    #     move_cmd = Twist()
+    #     move_cmd.linear.x = 0.0
+    #     move_cmd.angular.z = 0.0
+    #     self.publisher_.publish(move_cmd)
+    #     self.get_logger().info("빨간색을 찾지 못해 정지")
 
 def main(args=None):
     rclpy.init(args=args)
