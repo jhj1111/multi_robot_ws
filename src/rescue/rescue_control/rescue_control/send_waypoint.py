@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped, Quaternion, PoseWithCovarianceStamped, Point
 from nav2_msgs.action import FollowWaypoints
 import math
 import threading
@@ -9,35 +9,46 @@ import sys
 import select
 import termios
 import tty
-from rescue_control.coordinate import coordinate
+from coordinate import coordinate
 
 class WaypointFollower(Node):
     def __init__(self):
         super().__init__('waypoint_follower')
         self.action_client = ActionClient(self, FollowWaypoints, '/follow_waypoints')
-        self.coord_manager = coordinate()
+        self.subscription = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.pose_callback, 10)
+        self.publisher = self.create_publisher(Point, '/current_pose', 10)
         self.init_pose = [0.0, 0.0, 0.0, 1.0]
+        self.coord_manager = coordinate()
+        self.subscription
+        self.x = 0.0
+        self.y = 0.0
 
-    def euler_to_quaternion(self, roll, pitch, yaw):
-        qx = math.sin(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) - math.cos(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
-        qy = math.cos(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2)
-        qz = math.cos(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2) - math.sin(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2)
-        qw = math.cos(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
-        return Quaternion(x=qx, y=qy, z=qz, w=qw)
+    # def euler_to_quaternion(self, roll, pitch, yaw):
+    #     qx = math.sin(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) - math.cos(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
+    #     qy = math.cos(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2)
+    #     qz = math.cos(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2) - math.sin(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2)
+    #     qw = math.cos(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
+    #     return Quaternion(x=qx, y=qy, z=qz, w=qw)
+
+    def pose_callback(self, msg):
+        self.x = msg.pose.pose.position.x
+        self.y = msg.pose.pose.position.y
+        self.get_logger().info(f"Updated Pose: x={self.x}, y={self.y}")
 
     def send_goal(self):
         waypoints = []
         coordinates = self.coord_manager.get_coordinate()
 
         for coord in coordinates:
-            x, y = coord  # yaw 값을 추가적으로 받는다고 가정 x, y, yaw = coord
+            x, y, w = coord  # yaw 값을 추가적으로 받는다고 가정 x, y, yaw = coord
             yaw = 0.0
             pose = PoseStamped()
             pose.header.frame_id = 'map'
             pose.header.stamp = self.get_clock().now().to_msg()
             pose.pose.position.x = x
             pose.pose.position.y = y
-            pose.pose.orientation = self.euler_to_quaternion(0, 0, yaw)
+            pose.pose.orientation.w = w
+            # pose.pose.orientation = self.euler_to_quaternion(0, 0, yaw)
             waypoints.append(pose)
 
         goal_msg = FollowWaypoints.Goal()
@@ -70,6 +81,15 @@ class WaypointFollower(Node):
             self.get_logger().info(f'Missed waypoints: {missed_waypoints}')
         else:
             self.get_logger().info('All waypoints completed successfully!')
+            self.publish_callback()
+
+    def publish_callback(self):
+        point_msg = Point()
+        point_msg.x = self.x 
+        point_msg.y = self.y
+        point_msg.z = 0.0
+        self.get_logger().info(f"Publishing Pose: x={point_msg.x}, y={point_msg.y}, z={point_msg.z}")
+        self.publisher.publish(point_msg)
 
 def keyboard_listener(node):
     old_settings = termios.tcgetattr(sys.stdin)
@@ -93,3 +113,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
