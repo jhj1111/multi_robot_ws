@@ -1,11 +1,11 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
-package_name = 'rescue_control'
+package_name = 'sjtu_drone_control'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=find_packages(exclude=['test']),
+    packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -13,14 +13,17 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='jhj',
-    maintainer_email='happyijun@naver.com',
+    maintainer='ubuntu',
+    maintainer_email='georg.novtony@aon.at',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'send_waypoint = rescue_control.send_waypoint:main',
+            'teleop = sjtu_drone_control.teleop:main',
+            'teleop_joystick = sjtu_drone_control.teleop_joystick:main',
+            'open_loop_control = sjtu_drone_control.open_loop_control:main',
+            'drone_position_control = sjtu_drone_control.drone_position_control:main'
         ],
     },
 )
