@@ -4,10 +4,33 @@ import random
 from gazebo_msgs.srv import SpawnEntity
 from ament_index_python.packages import get_package_share_directory
 
+# 제외할 좌표 범위 리스트
+EXCLUDED_RANGES = [
+    ((-6.0, -2.8), (1.6, 4.7)),  # 첫 번째 제외 범위 (x 범위, y 범위)
+    ((-2.5, 0.9), (1.3, 4.5)),  # 두 번째 제외 범위
+    ((-6.0, -2.8), (-1.7, 1.0)), # 세 번째 제외 범위
+    ((-2.9, 1.0), (-0.2, 1.2))   # 네 번째 제외 범위
+]
+
+def is_excluded(x, y):
+    """해당 좌표 (x, y)가 제외할 범위 내에 있는지 확인"""
+    for x_range, y_range in EXCLUDED_RANGES:
+        if x_range[0] <= x <= x_range[1] and y_range[0] <= y <= y_range[1]:
+            return True
+    return False
+
+def get_random_pose():
+    while True:
+        x = random.uniform(-6.0, 1.0)
+        y = random.uniform(-2.0, 5.0)
+        
+        # 제외할 범위에 속하지 않는 경우 좌표 반환
+        if not is_excluded(x, y):
+            return x, y
+
 def main():
     # Start node
-    sdf_pose_x = random.uniform(1.0, 3.0)
-    sdf_pose_y = random.uniform(1.0, 3.0)
+    sdf_pose_x, sdf_pose_y = get_random_pose()
     sdf_pose_z = 0.1
 
     rclpy.init()
