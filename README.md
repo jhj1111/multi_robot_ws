@@ -3,6 +3,43 @@
 본 프로젝트는 **TurtleBot3** 및 **드론**을 활용한 시뮬레이션 환경을 구축하고, 이를 ROS 2 기반으로 제어하는 패키지 모음입니다.
 
 ---
+## 실행 명령어
+  ```sh
+  ros2 launch sjtu_drone_bringup project_sjtu_drone_bringup.launch.py
+  ```
+  - 드론 **스폰, Gazebo, RViz2, Teleop 실행**
+
+  ```sh
+  ros2 launch rescue_turtlebot3_bringup map_world_nogazebo.launch.py
+  ```
+  - **드론과 함께 실행**하는 모드 (Gazebo 미포함)
+
+  ```sh
+  ros2 launch rescue_control rescue_control_launch.launch.py
+  ```
+  - camera_openCV
+  - GUI
+
+  ```sh
+  ros2 launch rescue_turtlebot3_bringup map_world_nogazebo.launch.py
+  ```
+  - **드론과 함께 실행**하는 모드 (Gazebo 미포함)
+
+  ```sh
+  ros2 run rescue_turtlebot3_bringup spawn_ran
+  ```
+  - 목표물 랜덤위치 spawn
+
+
+  ```sh
+  ros2 run sjtu_drone_control drone_position_control02
+  ```
+  - 드론 turtlebot3 추적
+
+  ```sh
+  ros2 run rescue_control send_waypoint
+  ```
+  - waypoint 순환
 
 ## 📁 패키지 개요
 
