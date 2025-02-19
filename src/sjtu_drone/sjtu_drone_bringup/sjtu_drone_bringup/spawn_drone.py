@@ -33,6 +33,10 @@ def main(args=None):
     req.robot_namespace = namespace
     req.reference_frame = "world"
 
+    req.initial_pose.position.x = float(-2.5)
+    req.initial_pose.position.y = float(1.5)
+    req.initial_pose.position.z = float(0.1)
+
     while not cli.wait_for_service(timeout_sec=1.0):
         node.get_logger().info('service not available, waiting again...')
 
