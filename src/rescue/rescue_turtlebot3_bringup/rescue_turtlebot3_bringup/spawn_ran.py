@@ -49,13 +49,13 @@ def main():
     # script_dir = os.path.dirname(os.path.realpath(__file__))
     # sdf_file_path = os.path.join(script_dir, "models/model.sdf") 
     script_dir = os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'models')
-    sdf_file_path = os.path.join(script_dir, "model.sdf") 
+    sdf_file_path = os.path.join(script_dir, "hyu_robot.sdf") 
 
     # Set data for request
     request = SpawnEntity.Request()
-    request.name = "red"
+    request.name = "jun_robot"
     request.xml = open(sdf_file_path, 'r').read()
-    request.robot_namespace = "red"
+    request.robot_namespace = "jun_robot"
     request.initial_pose.position.x = float(sdf_pose_x)
     request.initial_pose.position.y = float(sdf_pose_y)
     request.initial_pose.position.z = float(sdf_pose_z)
