@@ -5,15 +5,16 @@ from geometry_msgs.msg import Twist
 import cv2
 import numpy as np
 from cv_bridge import CvBridge
+import time
 
 class RedObjectTrackingNode(Node):
     def __init__(self):
         super().__init__('red_object_tracking')
         self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)  # 이동 명령 퍼블리셔 생성
         self.subscription = self.create_subscription(
-            Image, 'camera_sensor/image_raw', self.image_callback, 10)  # 카메라 토픽 구독
+            Image, '/camera_sensor/image_raw', self.image_callback, 10)  # 카메라 토픽 구독
         self.bridge = CvBridge()  # ROS 이미지를 OpenCV 형식으로 변환
-        self.target_distance = 10  # 유지할 목표 거리 (cm)
+        self.target_distance = 0.15  # 유지할 목표 거리 (cm)
         self.frame_width = 640  # 프레임 너비 설정
         self.movement_step = 10  # 10cm씩 이동 (Gazebo 시뮬레이션용)
         self.is_moving = False  # 이동 여부를 나타내는 플래그
@@ -54,18 +55,20 @@ class RedObjectTrackingNode(Node):
                 move_cmd = self.compute_movement(x_center, distance)
                 self.publisher_.publish(move_cmd)
                 self.is_moving = True
-                self.create_timer(0.1, self.stop_after_movement)  # 0.1초 정지
-        else:
-            # self.stop_drone()
-            pass
+                time.sleep(1.0)
+                self.stop_after_movement()  # 0.1초 정지
+               
+            else:
+                # self.stop_drone()
+                pass
         
         cv2.imshow("Red Object Tracking", frame)
         cv2.waitKey(1)
 
     def estimate_distance(self, bbox_height):
         """ 객체와의 거리를 추정 """
-        focal_length = 250  # 초점 거리 (조정 필요)
-        known_height = 10  # cm (실제 물체의 높이) ### 수정
+        focal_length = 554  # 초점 거리 (조정 필요)
+        known_height = 44  # cm (실제 물체의 높이) ### 수정
         return (known_height * focal_length) / bbox_height if bbox_height > 0 else 100
 
     def get_dominant_color(self, roi):
@@ -83,7 +86,7 @@ class RedObjectTrackingNode(Node):
         """ 객체를 따라가도록 이동 명령을 계산 """
         move_cmd = Twist()
         
-        move_cmd.linear.x = 0.1  # 10cm 전진
+        move_cmd.linear.x = 0.3  # 10cm 전진
         move_cmd.angular.z = 0.0
         
         center_threshold = self.frame_width * 0.2  # 중심 오차 범위 설정
