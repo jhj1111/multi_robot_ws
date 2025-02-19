@@ -43,6 +43,7 @@ class RedObjectTrackingNode(Node):
             x_center = x + w // 2  # 객체 중심 좌표 계산
             distance = self.estimate_distance(h)  # 객체와의 거리 계산
             
+            self.get_logger().info(f"거리: {distance:.2f} cm")
             # 바운딩 박스 그리기
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             
@@ -96,7 +97,7 @@ class RedObjectTrackingNode(Node):
             move_cmd.angular.z = -0.2  # 오른쪽 회전
         else:
             move_cmd.angular.z = 0.0  # 직진 유지
-        
+        move_cmd = Twist() if distance<200.00 else move_cmd  #150이 타일 한칸정도 
         return move_cmd
     
     def stop_after_movement(self):
