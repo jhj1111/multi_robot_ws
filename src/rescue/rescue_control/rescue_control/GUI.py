@@ -11,6 +11,7 @@ from PySide2.QtGui import QPixmap, QImage
 from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, PoseStamped, Pose
 from nav2_msgs.srv import SetInitialPose
 from PIL import Image, ImageDraw
+from ament_index_python.packages import get_package_share_directory
 
 
 class NODE(QThread, Node):
@@ -136,10 +137,12 @@ class GUI(QMainWindow):
         self.load_map()
         self.setupUi()
 
+
     def load_map(self):
         """ 미니맵용 지도 로드 """
-        map_pgm_path = "src/rescue/rescue_control/mapping/new_yjz_map.pgm"
-        map_yaml_path = "src/rescue/rescue_control/mapping/new_yjz_map.yaml"
+        mapping_dir = os.path.join(get_package_share_directory('rescue_control'), 'mapping')
+        map_pgm_path = os.path.join(mapping_dir, 'new_yjz_map.pgm')
+        map_yaml_path = os.path.join(mapping_dir, 'new_yjz_map.yaml')
 
         if not os.path.exists(map_pgm_path) or not os.path.exists(map_yaml_path):
             raise FileNotFoundError(f"Map file or YAML not found in {map_pgm_path}")
