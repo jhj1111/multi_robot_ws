@@ -24,16 +24,10 @@ class WaypointFollower(Node):
         self.coord_manager = coordinate()
         self.subscription
         self.bool_subscription
+        self._goal_handle = None
         self.detect = False
         self.x = 0.0
         self.y = 0.0
-
-    # def euler_to_quaternion(self, roll, pitch, yaw):
-    #     qx = math.sin(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) - math.cos(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
-    #     qy = math.cos(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2)
-    #     qz = math.cos(roll / 2) * math.cos(pitch / 2) * math.sin(yaw / 2) - math.sin(roll / 2) * math.sin(pitch / 2) * math.cos(yaw / 2)
-    #     qw = math.cos(roll / 2) * math.cos(pitch / 2) * math.cos(yaw / 2) + math.sin(roll / 2) * math.sin(pitch / 2) * math.sin(yaw / 2)
-    #     return Quaternion(x=qx, y=qy, z=qz, w=qw)
 
     def pose_callback(self, msg):
         self.x = msg.pose.pose.position.x
@@ -65,6 +59,7 @@ class WaypointFollower(Node):
         goal_msg.poses = waypoints
 
         self.action_client.wait_for_server()
+        
         self._send_goal_future = self.action_client.send_goal_async(
             goal_msg, feedback_callback=self.feedback_callback
         )
@@ -76,9 +71,8 @@ class WaypointFollower(Node):
             self.get_logger().info('Goal rejected :(')
             return
 
-        self.get_logger().info('Goal accepted :)')
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback)
+        self.get_logger().info('Goal accepted.')
+        self._goal_handle = goal_handle
 
     def feedback_callback(self, feedback_msg):
         feedback = feedback_msg.feedback
