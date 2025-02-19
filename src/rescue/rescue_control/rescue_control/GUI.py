@@ -138,8 +138,8 @@ class GUI(QMainWindow):
 
     def load_map(self):
         """ 미니맵용 지도 로드 """
-        map_pgm_path = "/home/rokey/mapping/new_yjz_map.pgm"
-        map_yaml_path = "/home/rokey/mapping/new_yjz_map.yaml"
+        map_pgm_path = "src/rescue/rescue_control/mapping/new_yjz_map.pgm"
+        map_yaml_path = "src/rescue/rescue_control/mapping/new_yjz_map.yaml"
 
         if not os.path.exists(map_pgm_path) or not os.path.exists(map_yaml_path):
             raise FileNotFoundError(f"Map file or YAML not found in {map_pgm_path}")
