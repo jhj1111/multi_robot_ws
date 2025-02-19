@@ -3,6 +3,7 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, Quaternion, PoseWithCovarianceStamped, Point
 from nav2_msgs.action import FollowWaypoints
+from std_msgs.msg import Bool
 import math
 import threading
 import sys
@@ -18,9 +19,12 @@ class WaypointFollower(Node):
         self.action_client = ActionClient(self, FollowWaypoints, '/follow_waypoints')
         self.subscription = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.pose_callback, 10)
         self.publisher = self.create_publisher(Point, '/current_pose', 10)
+        self.bool_subscription = self.create_subscription(Bool, '/detected', self.detect_callback, 10)
         self.init_pose = [0.0, 0.0, 0.0, 1.0]
         self.coord_manager = coordinate()
         self.subscription
+        self.bool_subscription
+        self.detect = False
         self.x = 0.0
         self.y = 0.0
 
@@ -36,6 +40,11 @@ class WaypointFollower(Node):
         self.y = msg.pose.pose.position.y
         self.get_logger().info(f"Updated Pose: x={self.x}, y={self.y}")
 
+    def detect_callback(self, msg):
+        self.detect = msg.data
+
+        if self.detect == True:
+            self.cancel_goal()
     def send_goal(self):
         waypoints = []
         coordinates = self.coord_manager.get_coordinate()
@@ -74,6 +83,24 @@ class WaypointFollower(Node):
     def feedback_callback(self, feedback_msg):
         feedback = feedback_msg.feedback
         self.get_logger().info(f'Current Waypoint Index: {feedback.current_waypoint}')
+        
+    def cancel_goal(self):
+        if self._goal_handle is not None:
+            self.get_logger().info('Attempting to cancel the goal...')
+            cancel_future = self._goal_handle.cancel_goal_async()
+            cancel_future.add_done_callback(self.cancel_done_callback)
+        else:
+            self.get_logger().info('No active goal to cancel.')
+
+    def cancel_done_callback(self, future):
+        cancel_response = future.result()
+        if len(cancel_response.goals_canceling) > 0:
+            self.get_logger().info('Goal cancellation accepted. Exiting program...')
+            self.destroy_node()
+            rclpy.shutdown()
+            sys.exit(0)  # Exit the program after successful cancellation
+        else:
+            self.get_logger().info('Goal cancellation failed or no active goal to cancel.')   
 
     def get_result_callback(self, future):
         result = future.result().result

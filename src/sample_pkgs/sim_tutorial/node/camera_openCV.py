@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 import cv2
 import numpy as np
 from cv_bridge import CvBridge
@@ -13,6 +14,8 @@ class RedObjectTrackingNode(Node):
         self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)  # 이동 명령 퍼블리셔 생성
         self.subscription = self.create_subscription(
             Image, '/camera_sensor/image_raw', self.image_callback, 10)  # 카메라 토픽 구독
+        self.bool_publisher_ = self.create_publisher(Bool, '/detected', 10)
+
         self.bridge = CvBridge()  # ROS 이미지를 OpenCV 형식으로 변환
         self.target_distance = 0.15  # 유지할 목표 거리 (cm)
         self.frame_width = 640  # 프레임 너비 설정
@@ -50,6 +53,7 @@ class RedObjectTrackingNode(Node):
             # 주요 색상 추출
             dominant_color = self.get_dominant_color(frame[y:y+h, x:x+w])
             self.get_logger().info(f"주요 색상: {dominant_color}")
+            self.detect_obj()
             
             # 10cm씩 이동 후 정지
             if not self.is_moving:
@@ -108,7 +112,12 @@ class RedObjectTrackingNode(Node):
         self.publisher_.publish(move_cmd)
         self.is_moving = False
         self.get_logger().info("10cm 이동 후 다시 객체 탐색")
-    
+
+    def detect_obj(self):
+        send_detect = Bool()
+        self.detected = True
+        send_detect.data = self.detected
+        self.bool_publisher_.publish(send_detect)  
     # def stop_robot(self):
     #     """ 객체를 찾지 못했을 때 정지 """
     #     move_cmd = Twist()
