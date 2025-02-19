@@ -49,7 +49,7 @@ class DroneObject(Node):
         self.pubLand = self.create_publisher(Empty, '/simple_drone/land', 1024)
         self.pubReset = self.create_publisher(Empty, '/simple_drone/reset', 1024)
         self.pubPosCtrl = self.create_publisher(Bool, '/simple_drone/posctrl', 1024)
-        self.pubCmd = self.create_publisher(Twist, '/simple_drone/cmd_vel', 1024)
+        self.pubCmd = self.create_publisher(Twist, '/simple_drone/cmd_vel', 10)
         self.pubVelMode = self.create_publisher(Bool, '/simple_drone/dronevel_mode', 1024)
 
         # Subscribers
@@ -350,14 +350,7 @@ class DroneObject(Node):
 
 class DronePositionControl(DroneObject):
     def __init__(self):
-        super().__init__('drone_position_control')
-
-        #self.takeOff()
-        #self.get_logger().info('Drone takeoff')
-
-        # Set the m_posCtrl flag to True
-        self.posCtrl(True)
-        self.get_logger().info('Position control mode set to True')
+        super().__init__('drone_obj_tracker')
 
         # 초기 위치 저장 변수
         self.amcl_initial_pose = None
@@ -365,18 +358,44 @@ class DronePositionControl(DroneObject):
         self.drone_initial_pose = None
         self.drone_current_pose = None
         self.takeOff_finished = False
+        self.amcl_tracking_mode = False
+
+        # set position mode.. 의미 없는듯...?
+        mode = Bool()
+        mode.data = True
+        self.pubVelMode.publish(mode)
+
+        # init drone
+        takeoff = self.init_drone()
 
         # Subscribers
         self.sub_initial_pose = self.create_subscription(
-            PoseWithCovarianceStamped, '/initialpose', self.cb_initial_pose, 10, callback_group=ReentrantCallbackGroup())
+            PoseWithCovarianceStamped, '/initialpose', self.cb_initial_pose, 10)
         self.sub_amcl_pose = self.create_subscription(
-            PoseWithCovarianceStamped, '/amcl_pose', self.cb_amcl_pose, 10, callback_group=ReentrantCallbackGroup())
-        self.sub_gt_pose = self.create_subscription(
-            Pose, '/simple_drone/gt_pose', self.cb_gt_pose, 10, callback_group=ReentrantCallbackGroup())
+            PoseWithCovarianceStamped, '/amcl_pose', self.cb_amcl_pose, 10)
+        self.sub_obj_detected = self.create_subscription(Bool, '/detected', self.obj_detected_callback, 10)
         
-        if self.isFlying and self.takeOff_finished and (self.amcl_initial_pose is not None) and (self.amcl_current_pose is not None):
-            self.timer = self.create_timer(1.0, self.get_distance, callback_group=ReentrantCallbackGroup())
+        #if self.isFlying and self.takeOff_finished and self.amcl_current_pose != None:
+        self.timer = self.create_timer(0.3, self.get_distance)
 
+    def init_drone(self):
+        '''drone take off'''
+        super().takeOff()
+        self.get_logger().info('Drone takeoff')
+        time.sleep(5.0)
+        super().posCtrl(True)
+        self.get_logger().info('Position control mode set to True')
+
+        pos = Vector3()
+        # pos.x = self._gt_pose.position.x
+        # pos.y = self._gt_pose.position.y
+        pos.z = 5.0
+        super().move(pos)
+        time.sleep(2.0)
+        self.get_logger().info("take off finished")
+        self.takeOff_finished = True
+
+        return
 
     def move_drone_to_pose(self, x, y, z):
         # Override the move_drone_to_pose method if specific behavior is needed
@@ -388,112 +407,80 @@ class DronePositionControl(DroneObject):
             return False
         
         #rate = self.create_rate(10)  # 10Hz 루프
-        target_reached = False
-        
-        while not target_reached:
-            distance = (dx**2 + dy**2)**0.5
+        distance = (dx**2 + dy**2)**0.5
 
-            if distance < 0.1:  # 목표 근처에 도달하면 정지
-                target_reached = True
-                self.hover()
-                self.get_logger().info("Target reached")
-                break
-
+        if distance > 1.0:
             # 속도 설정 (거리 기반)
             twist_msg = Twist()
-            # twist_msg.linear.x = min(max(dx, -1.0), 1.0)  # 속도 제한 (-1.0 ~ 1.0 m/s)
-            # twist_msg.linear.y = min(max(dy, -1.0), 1.0)
-            twist_msg.linear.x = min(abs(dx)/distance, 1) if dx >= 0 else -min(abs(dx)/distance, 1)
-            twist_msg.linear.y = min(abs(dy)/distance, 1) if dy >= 0 else -min(abs(dy)/distance, 1)
-            twist_msg.linear.z = 0.0
+            # twist_msg.linear.x = min(abs(dx)/distance, 1) if dx >= 0 else -min(abs(dx)/distance, 1)
+            # twist_msg.linear.y = min(abs(dy)/distance, 1) if dy >= 0 else -min(abs(dy)/distance, 1)
+            twist_msg.linear.z = dz
+            twist_msg.linear.x = dx
+            twist_msg.linear.y = dy
 
             self.get_logger().info(f"cmd_vel x={twist_msg.linear.x}, y={twist_msg.linear.y}, z={twist_msg.linear.z}")
+            self.get_logger().info(f"dron pos x={self.drone_current_pose.position.x}, y={self.drone_current_pose.position.y}, z={self.drone_current_pose.position.z}")
             self.pubCmd.publish(twist_msg)
             #rate.sleep()
+        else :
+            self.get_logger().info("Target reached")
+            self.get_logger().info(f"distance = {distance}")
 
-        return True
+            return True
     
     def get_distance(self):
-        drone_dx = self.drone_current_pose.position.x - self.drone_initial_pose.position.x
-        drone_dy = self.drone_current_pose.position.y - self.drone_initial_pose.position.y
-        turtlebot3_dx = self.amcl_current_pose.position.x - self.amcl_initial_pose.position.x
-        turtlebot3_dy = self.amcl_current_pose.position.y - self.amcl_initial_pose.position.y
+        '''amcl tracking'''
+        # amcl 정보 확인
+        if self.amcl_initial_pose == None or self.amcl_current_pose == None: 
+            #self.get_logger().info(f"amcl point missing")
+            return
+        # tracking mode(obj detected) 확인
+        if not self.amcl_tracking_mode : return
+        # drone_initial_pose 정보 없을 시 갱신
+        if self.drone_initial_pose == None : 
+            self.drone_initial_pose = self._gt_pose
 
-        drone_turtlebot3_dx = turtlebot3_dx - drone_dx
-        drone_turtlebot3_dy = turtlebot3_dy - drone_dy
+        self.drone_current_pose = self._gt_pose
+
+        drone_turtlebot3_dx = self.amcl_current_pose.position.x - self.drone_initial_pose.position.x
+        drone_turtlebot3_dy = self.amcl_current_pose.position.y - self.drone_initial_pose.position.y
 
         # 드론 이동 실행
-        self.move2point(drone_turtlebot3_dx, drone_turtlebot3_dy, 0.0)
+        self.move2point(drone_turtlebot3_dx, drone_turtlebot3_dy, 5.0)
 
+    def obj_detected_callback(self, msg: Bool):
+        '''obj detected -> 드론 출발'''
+        if msg.data == False : return
+
+        if self._gt_pose.position.z < 5.0 : # 5.0 높이만큼 상승
+            linear_vec = Vector3()
+            linear_vec.x = self.gt_pose.position.x
+            linear_vec.y = self.gt_pose.position.y
+            linear_vec.z = 5.0
+            super().move(linear_vec)
+            time.sleep(2.0)
+        self.amcl_tracking_mode = True
 
     def cb_initial_pose(self, msg: PoseWithCovarianceStamped):
         """초기 위치 저장"""
         self.amcl_initial_pose = msg.pose.pose
         self.get_logger().info('turtlebot3 initial pose received.')
-
-        self.takeOff()
-        self.get_logger().info('Drone takeoff')
-        time.sleep(5.0)
         
-        self.rise(0.5)
-        time.sleep(4.0)
-        self.get_logger().info(f"z = {self.drone_current_pose.position.z}")
-        self.hover()
-        self.get_logger().info("take off finished")
-        self.takeOff_finished = True
-
-    def cb_gt_pose(self, msg: Pose):
-        """현재 Ground Truth 위치 저장"""
-        if self.drone_initial_pose == None : self.drone_initial_pose = msg
-
-        self.drone_current_pose = msg
-        #self.get_logger().info('Current ground truth pose updated.')
-
     def cb_amcl_pose(self, msg: PoseWithCovarianceStamped):
         """AMCL 위치를 받아서 이동 명령 실행"""
         if self.amcl_initial_pose is None:
-            self.get_logger().warn("Initial pose not received yet. Ignoring AMCL command.")
-            return
-        elif not self.takeOff_finished : 
-            self.get_logger().info("taking off...")
-            return
+            self.amcl_initial_pose = msg.pose.pose
+            self.get_logger().warn("amcl initial pose updated.")
+        if not self.takeOff_finished : 
+            self.get_logger().info("need take off...")
 
         self.amcl_current_pose = msg.pose.pose
-
-        # 이동할 거리 계산 (AMCL 위치 - Initial 위치)
-        #dx = amcl_pose.position.x - self.initial_pose.position.x
-        #dy = amcl_pose.position.y - self.initial_pose.position.y
-        #dz = amcl_pose.position.z - self.initial_pose.position.z  # 필요하면 사용
-
-        # drone_dx = self.drone_current_pose.position.x - self.drone_initial_pose.position.x
-        # drone_dy = self.drone_current_pose.position.y - self.drone_initial_pose.position.y
-        # turtlebot3_dx = self.amcl_current_pose.position.x - self.amcl_initial_pose.position.x
-        # turtlebot3_dy = self.amcl_current_pose.position.y - self.amcl_initial_pose.position.y
-
-        # drone_turtlebot3_dx = turtlebot3_dx - drone_dx
-        # drone_turtlebot3_dy = turtlebot3_dy - drone_dy
-
-        # # 드론 이동 실행
-        # self.move2point(drone_turtlebot3_dx, drone_turtlebot3_dy, 0.0)
-        self.get_distance()
-
+        self.get_logger().info(f"amcl pos x = {self.amcl_current_pose.position.x}, y = {self.amcl_current_pose.position.y}, z = {self.amcl_current_pose.position.z}")
 
 def main(args=None):
-    # rclpy.init(args=args)
-    # drone_position_control_node = DronePositionControl()
-    # rclpy.spin(drone_position_control_node)
-    # drone_position_control_node.destroy_node()
-    # rclpy.shutdown()
-
     rclpy.init(args=args)
     drone_position_control_node = DronePositionControl()
-    executor = MultiThreadedExecutor()
-    executor.add_node(drone_position_control_node)
-    try:
-        rclpy.spin(drone_position_control_node)
-    except KeyboardInterrupt:
-        pass
-
+    rclpy.spin(drone_position_control_node)
     drone_position_control_node.destroy_node()
     rclpy.shutdown()
 

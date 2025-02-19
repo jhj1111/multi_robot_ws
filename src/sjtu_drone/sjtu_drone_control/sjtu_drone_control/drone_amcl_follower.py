@@ -350,7 +350,7 @@ class DroneObject(Node):
 
 class DronePositionControl(DroneObject):
     def __init__(self):
-        super().__init__('drone_position_control')
+        super().__init__('drone_amcl_follower')
 
         # 초기 위치 저장 변수
         self.amcl_initial_pose = None

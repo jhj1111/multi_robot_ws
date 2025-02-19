@@ -27,8 +27,8 @@ setup(
             'teleop_joystick = sjtu_drone_control.teleop_joystick:main',
             'open_loop_control = sjtu_drone_control.open_loop_control:main',
             'drone_position_control = sjtu_drone_control.drone_position_control:main',
-            'drone_position_control01 = sjtu_drone_control.drone_position_control01:main',
-            'drone_position_control02 = sjtu_drone_control.drone_position_control02:main',
+            'drone_obj_tracker= sjtu_drone_control.drone_obj_tracker:main',
+            'drone_amcl_follower = sjtu_drone_control.drone_amcl_follower:main',
         ],
     },
 )
