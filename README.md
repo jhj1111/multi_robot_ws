@@ -53,6 +53,11 @@
   ros2 run rescue_control send_waypoint
   ```
   - `send_waypoint` : TurtleBot3의 웨이포인트 지정
+ 
+  ```sh
+  ros2 run rescue_control GUI
+  ```
+  - `GUI` : 관제 시스템 실행
 
 ### 3. rescue_turtlebot3_bringup  
 - **역할:** TurtleBot3의 Gazebo 및 RViz2 실행, 스폰 관련 기능 제공  
