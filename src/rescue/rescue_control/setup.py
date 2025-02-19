@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+import os, glob
 
 package_name = 'rescue_control'
 
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, "launch"), glob.glob('launch/*launch.[pxy][yma]*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -21,6 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'send_waypoint = rescue_control.send_waypoint:main',
+            'GUI = rescue_control.GUI:main',
+            'camera_openCV = rescue_control.camera_openCV:main',
         ],
     },
 )
