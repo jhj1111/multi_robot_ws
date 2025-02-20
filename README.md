@@ -3,7 +3,7 @@
 본 프로젝트는 **TurtleBot3** 및 **드론**을 활용한 시뮬레이션 환경을 구축하고, 이를 ROS 2 기반으로 제어하는 패키지 모음입니다.
 
 ---
-## 실행 명령어
+## 🚀 실행 방법 
   ```sh
   ros2 launch sjtu_drone_bringup project_sjtu_drone_bringup.launch.py
   ```
@@ -32,9 +32,9 @@
 
 
   ```sh
-  ros2 run sjtu_drone_control drone_position_control02
+  ros2 run sjtu_drone_control drone_obj_tracker
   ```
-  - 드론 turtlebot3 추적
+  - 목표뮬 발견 시 드론 출발
 
   ```sh
   ros2 run rescue_control send_waypoint
@@ -92,20 +92,16 @@
 - **역할:** 드론의 Teleop 및 제어 기능 수행  
 - **주요 실행 명령어:**  
   ```sh
-  ros2 run sjtu_drone_control drone_position_control02
+  ros2 run sjtu_drone_control drone_obj_tracker
   ```
-  - **드론이 TurtleBot3를 추적**하는 기능 실행
+  - **목표물 발견 시 드론 출발**하는 기능 실행
+  
+  ```sh
+  ros2 run sjtu_drone_control drone_amcl_follower
+  ```
+  - **드론 turtlebot3 실시간 추적**하는 기능 실행  
 
 ---
-
-## 🚀 실행 방법  
-각 패키지의 실행 방법은 위 설명을 참고하세요.  
-자세한 내용은 해당 패키지의 소스 코드 및 설정 파일을 참고하시기 바랍니다.
-
----
-
-## 📜 라이선스  
-이 프로젝트는 [MIT 라이선스](LICENSE)를 따릅니다.
 
 
 
