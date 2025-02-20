@@ -26,6 +26,7 @@ setup(
             'send_waypoint = rescue_control.send_waypoint:main',
             'GUI = rescue_control.GUI:main',
             'camera_openCV = rescue_control.camera_openCV:main',
+            'camera_openCV_nav2 = rescue_control.camera_openCV_nav2:main',
         ],
     },
 )
