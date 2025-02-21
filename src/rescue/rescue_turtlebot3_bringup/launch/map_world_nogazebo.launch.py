@@ -32,7 +32,7 @@ def generate_launch_description():
     rescue_turtlebot3_bringup_path = os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'launch')
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    x_pose = LaunchConfiguration('x_pose', default='0.5')
+    x_pose = LaunchConfiguration('x_pose', default='-5.0')
     y_pose = LaunchConfiguration('y_pose', default='-3.0')
 
     world = os.path.join(

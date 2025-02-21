@@ -18,7 +18,7 @@ def generate_launch_description():
         default=os.path.join(
             get_package_share_directory('rescue_turtlebot3_bringup'),
             'map',
-            'new_map.yaml'))
+            'map_wall.yaml'))
 
     param_file_name = TURTLEBOT3_MODEL + '.yaml'
     param_dir = LaunchConfiguration(

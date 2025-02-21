@@ -58,7 +58,7 @@ def generate_launch_description():
 
     world_file_default = os.path.join(
         get_package_share_directory("rescue_turtlebot3_bringup"),
-        "worlds", "map02.world"
+        "worlds", "map_wall.world"
     )
 
     world_file = LaunchConfiguration('world', default=world_file_default)
