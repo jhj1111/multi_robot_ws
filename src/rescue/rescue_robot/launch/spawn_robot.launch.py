@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, xacro, math
+import os
+import math
+import xacro
 
-from ament_index_python.packages import get_package_share_directory, get_package_share_path
+from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.parameter_descriptions import ParameterValue
-from launch.substitutions import Command
 
 
 def euler_to_quaternion(roll, pitch, yaw, rad=False):
@@ -29,14 +28,15 @@ def euler_to_quaternion(roll, pitch, yaw, rad=False):
     오일러 각도(roll, pitch, yaw)를 쿼터니언(qx, qy, qz, qw)으로 변환하는 함수.
     입력 단위는 deg여야 합니다.
 
-    :param roll: X축 회전 (deg여야)
-    :param pitch: Y축 회전 (deg여야)
-    :param yaw: Z축 회전 (deg여야)
+    :param roll: X축 회전 (deg 단위)
+    :param pitch: Y축 회전 (deg 단위)
+    :param yaw: Z축 회전 (deg 단위)
+    :param rad: radian 단위 사용 여부 (기본값: False)
     :return: (qx, qy, qz, qw) 형태의 튜플 (쿼터니언)
     """
-    if not rad : roll, pitch, yaw = math.radians(roll), math.radians(pitch), math.radians(yaw)
+    if not rad:
+        roll, pitch, yaw = map(math.radians, [roll, pitch, yaw])
 
-    # 각도를 절반으로 줄이기
     cy = math.cos(yaw * 0.5)
     sy = math.sin(yaw * 0.5)
     cp = math.cos(pitch * 0.5)
@@ -44,54 +44,60 @@ def euler_to_quaternion(roll, pitch, yaw, rad=False):
     cr = math.cos(roll * 0.5)
     sr = math.sin(roll * 0.5)
 
-    # 쿼터니언 공식 적용
     qw = cr * cp * cy + sr * sp * sy
     qx = sr * cp * cy - cr * sp * sy
     qy = cr * sp * cy + sr * cp * sy
     qz = cr * cp * sy - sr * sp * cy
 
-    return (qx, qy, qz, qw)
+    return qx, qy, qz, qw
+
 
 def generate_launch_description():
-    # Get the urdf file
-    rescue_robot_pkg = get_package_share_directory('rescue_robot')
-    urdf_path = os.path.join(get_package_share_path('rescue_robot'),
-                             'urdf', 'my_robot.urdf.xacro')
-    
-    robot_description = xacro.process_file(urdf_path)
+    # URDF 파일 경로 가져오기
+    rescue_robot_pkg_path = get_package_share_path('rescue_robot')
+    xacro_path = rescue_robot_pkg_path / 'urdf' / 'my_robot.urdf.xacro'
 
-    qx, qy, qz, qw = euler_to_quaternion(0.0, 0.0, -90.0)
+    # Xacro 파일을 URDF로 변환
+    robot_description = xacro.process_file(str(xacro_path)).toxml()
+
+    # 초기 위치 및 자세 설정
     x_pose = LaunchConfiguration('x_pose', default='-4.0')
     y_pose = LaunchConfiguration('y_pose', default='-2.0')
     z_pose = LaunchConfiguration('z_pose', default='0.1')
 
-    x_rad = LaunchConfiguration('x_rad', default=0.0)
-    y_rad = LaunchConfiguration('y_rad', default=0.0)
-    z_rad = LaunchConfiguration('z_rad', default=math.radians(-90.0))
+    x_rad = LaunchConfiguration('x_rad', default='0.0')
+    y_rad = LaunchConfiguration('y_rad', default='0.0')
+    z_rad = LaunchConfiguration('z_rad', default=str(math.radians(-90.0)))
 
-    robot_spawner_cmd = Node(
-        package='rescue_robot',
-        executable='spawn_robot',
-        arguments=[robot_description.toxml(), 'robot01'],
-        output='screen',
-    )
+    # Xacro 변환 수행 (변환된 URDF를 임시 파일로 저장)
+    urdf_raw = xacro.process_file(str(xacro_path)).toxml()
+    urdf_file_path = os.path.join('/tmp', 'robot.urdf')
 
+    with open(urdf_file_path, 'w') as urdf_file:
+        urdf_file.write(urdf_raw)
+
+    # Gazebo 로봇 스폰
     spawn_entity = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-topic', 'robot_description', '-entity', 'arm_robot', 'file', robot_description.toxml(),
-                   '-x', x_pose, '-y', y_pose, '-z', z_pose, '-R', x_rad, '-P', y_rad, '-Y', z_rad],
+        arguments=[
+            '-entity', 'arm_robot',
+            '-file', urdf_file_path,
+            '-x', x_pose, '-y', y_pose, '-z', z_pose,
+            '-R', x_rad, '-P', y_rad, '-Y', z_rad
+        ],
         output='screen'
     )
 
-    ld = LaunchDescription()
-
-    # Declare the launch options
-    # ld.add_action(declare_x_position_cmd)
-    # ld.add_action(declare_y_position_cmd)
-
-    # Add any conditioned actions
-    #ld.add_action(robot_spawner_cmd)
-    ld.add_action(spawn_entity)
+    # Launch Description 생성
+    ld = LaunchDescription([
+        DeclareLaunchArgument('x_pose', default_value='-4.0', description='Initial x position'),
+        DeclareLaunchArgument('y_pose', default_value='-2.0', description='Initial y position'),
+        DeclareLaunchArgument('z_pose', default_value='0.1', description='Initial z position'),
+        DeclareLaunchArgument('x_rad', default_value='0.0', description='Initial roll rotation'),
+        DeclareLaunchArgument('y_rad', default_value='0.0', description='Initial pitch rotation'),
+        DeclareLaunchArgument('z_rad', default_value=str(math.radians(-90.0)), description='Initial yaw rotation'),
+        spawn_entity
+    ])
 
     return ld

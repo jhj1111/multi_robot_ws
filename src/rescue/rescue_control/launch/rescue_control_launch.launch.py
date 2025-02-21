@@ -19,7 +19,7 @@ def generate_launch_description():
 
     openCV_node = Node(
         package='rescue_control',
-        executable='camera_openCV',
+        executable='camera_openCV_nav2',
         namespace=namespace,
         output='screen',
     )

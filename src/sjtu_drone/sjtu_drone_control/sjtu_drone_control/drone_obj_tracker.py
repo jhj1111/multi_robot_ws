@@ -446,19 +446,21 @@ class DronePositionControl(DroneObject):
         drone_turtlebot3_dy = self.amcl_current_pose.position.y - self.drone_initial_pose.position.y
 
         # 드론 이동 실행
-        self.move2point(drone_turtlebot3_dx, drone_turtlebot3_dy, 5.0)
+        self.move2point(drone_turtlebot3_dx, drone_turtlebot3_dy, 7.0)
 
     def obj_detected_callback(self, msg: Bool):
         '''obj detected -> 드론 출발'''
         if msg.data == False : return
 
-        if self._gt_pose.position.z < 5.0 : # 5.0 높이만큼 상승
+        if self._gt_pose.position.z < 7.0 : # 5.0 높이만큼 상승
             linear_vec = Vector3()
-            linear_vec.x = self.gt_pose.position.x
-            linear_vec.y = self.gt_pose.position.y
-            linear_vec.z = 5.0
+            # linear_vec.x = self.gt_pose.position.x
+            # linear_vec.y = self.gt_pose.position.y
+            linear_vec.x = self.gt_pose.position.x - 5.0
+            linear_vec.y = self.gt_pose.position.y - 3.0
+            linear_vec.z = 7.0
             super().move(linear_vec)
-            time.sleep(2.0)
+            time.sleep(4.0)
         self.amcl_tracking_mode = True
 
     def cb_initial_pose(self, msg: PoseWithCovarianceStamped):

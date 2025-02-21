@@ -164,8 +164,8 @@ class RedObjectTrackingNode(Node):
         quat = self.amcl_current_pose.orientation
         _, _, yaw_rad = self.euler_from_quaternion(quat.x, quat.y, quat.z, quat.w)
 
-        goal_msg.pose.pose.position.x = self.amcl_current_pose.position.x + 0.8 * math.cos(yaw_rad)
-        goal_msg.pose.pose.position.y = self.amcl_current_pose.position.y + 0.8 * math.sin(yaw_rad)
+        goal_msg.pose.pose.position.x = self.amcl_current_pose.position.x + 1.5 * math.cos(yaw_rad)
+        goal_msg.pose.pose.position.y = self.amcl_current_pose.position.y + 1.5 * math.sin(yaw_rad)
 
         goal_msg.pose.pose.orientation.z = self.amcl_current_pose.orientation.z
         goal_msg.pose.pose.orientation.w = self.amcl_current_pose.orientation.w
