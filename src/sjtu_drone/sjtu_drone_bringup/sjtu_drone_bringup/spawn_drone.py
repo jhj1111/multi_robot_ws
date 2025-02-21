@@ -33,7 +33,7 @@ def main(args=None):
     req.robot_namespace = namespace
     req.reference_frame = "world"
 
-    req.initial_pose.position.x = float(-2.5)
+    req.initial_pose.position.x = float(-1.0)
     req.initial_pose.position.y = float(1.5)
     req.initial_pose.position.z = float(0.1)
 

@@ -77,7 +77,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             'use_sim_time': use_sim_time,
-            'map': os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'map', 'new_map.yaml'),
+            'map': os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'map', 'map_wall.yaml'),
             'params_file': os.path.join(get_package_share_directory('rescue_turtlebot3_bringup'), 'param', TURTLEBOT3_MODEL + '.yaml'),
         }.items()
     )
